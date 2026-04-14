@@ -16,8 +16,8 @@ https://doi.org/10.5281/zenodo.7268127
 # Requirements
 
 To use this macro, you need:
-- A recent version of Fiji.
-- The Biovoxxel plugins installed and up to date.
+- A recent version of Fiji: [Link to install Fiji](https://imagej.net/software/fiji/)
+- The Biovoxxel plugins installed and up to date. [Follow the tutorial to install Biovoxxel plugins](https://imagej.net/update-sites/following)
 - Input images in TIFF format with appropriate scaling.
 
 # Features
