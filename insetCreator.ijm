@@ -18,12 +18,14 @@ Dialog.addDirectory("Folder containing the images: ","");
 Dialog.addCheckbox("Adjust brightness:", true);
 Dialog.addCheckbox("Crop the image:", false);
 Dialog.addNumber("Number of insert: ", 1);
+Dialog.addCheckbox("Check everytime that ROI was added in ROI Manager", true);
 Dialog.show();
 
 inputPath = Dialog.getString();
 adjBrightness = Dialog.getCheckbox();
 crop = Dialog.getCheckbox();
 insetNbr = Dialog.getNumber();
+checkROI = Dialog.getCheckbox();
 imgList = getFileList(inputPath);
 
 whiteblack = newArray("White","Black");
@@ -31,7 +33,6 @@ whiteblack = newArray("White","Black");
 if (File.exists(inputPath+File.separator+"settingInsetCreator.csv")) {
 	print("Loading setting...");
 	Table.open(inputPath+File.separator+"settingInsetCreator.csv");
-	waitForUser
 	scLength = Table.get("scLength", 0);
 	print("Length of the scale bar for the main image: " + scLength);
 	iscLength = Table.get("iscLength", 0);
@@ -66,6 +67,7 @@ if (File.exists(inputPath+File.separator+"settingInsetCreator.csv")) {
 
 for (img = 0; img < imgList.length; img++) {
     if (endsWith(imgList[img], ".tif") && !startsWith(imgList[img], "Mod") && !startsWith(imgList[img], "Inset")) {
+    	setBatchMode("exit and display");
 		open(inputPath + File.separator + imgList[img]);
 		title = imgList[img];
 
@@ -89,7 +91,7 @@ Dialog.addChoice("Format of the image", newArray("SVG","TIFF"), format);
 Dialog.addMessage("");
 Dialog.addMessage("Note regarding image saving:");
 Dialog.addMessage("Initially, Inkscape uses a resolution of 96 dpi,\nwhile Illustrator uses a resolution of 72 dpi\nwhen importing images.");
-Dialog.addMessage("In Inkscape, you can adjust the import resolution to ensure that the specified size is respected (Edit > Preferences > Import/Export > Import Resolution)\nIt does not work with Illustrator");
+Dialog.addMessage("In Inkscape, you can adjust the import resolution to ensure that the specified size is respected\n(Edit > Preferences > Import/Export > Import Resolution)\nIt does not work with Illustrator");
 Dialog.addMessage("Moreover, the specified size will only be preserved if the image is saved as\na TIFF (in which case, the scale bars and inset rectangles cannot be\nmodified). If you want to be able to modify the scale bars and inset\nrectangles, you must select SVG as the save format.");
 Dialog.show();
 
@@ -129,28 +131,44 @@ close("settingInsetCreator.csv");
 		if(File.exists(inputPath+"crop.zip")) roiManager("open", inputPath+"crop.zip");
 		waitForUser("Select ROI for cropping.\nAdd it to the ROI Manager (Ctrl+T), if you want to save it.\nYou can also load 'crop' ROI from a previous processing step");
 		if (roiManager("count") > 0) roiManager("save", inputPath+"crop.zip");
+		if(checkROI){
+			while (roiManager("count") ==0) {
+				waitForUser("You forgot to add ROI to ROI manager... Enter Ctrl+T");
+			}
+		}
 		run("Crop");
 	}
+		setBatchMode("hide");
 	
 		setTool(0);
 		roiManager("deselect");
 		if(roiManager("count")>0) roiManager("delete");
 		if(File.exists(inputPath+"inset.zip")) roiManager("open", inputPath+"inset.zip");
 	for (inset = 0; inset < insetNbr; inset++) {
+		selectImage(title);
+		setBatchMode("exit and display");
 		selectWindow("ROI Manager");
-		run("Create framed inset zoom");
 		Dialog.createNonBlocking("Create Inset");
 		Dialog.addMessage("Inset: " + inset + 1);
+		Dialog.addMessage("Open Biovoxxel Figure Tool > Create framed inset zoom");
 		Dialog.addMessage("Move the square that appears in the top left to the zone of interest.");
 		Dialog.addMessage("To modify the size of the square, the color of the inset, and so on, use only the user interface of the Biovoxxel plugin.\nNormally the interface is automatically open");
 		Dialog.addMessage("Add it to the ROI Manager (Ctrl+T) if you want to save it; it will be saved as inset.zip.");
-		Dialog.addMessage("You can also use a previous inset. If they don't appear in the ROI Manager, you can load them. Then open the Biovoxxel plugin and click on the ROI of interest in the ROI Manager. Note that if you have rotated the ROI, you need to rotate it again using the Biovoxxel plugin interface.");
+		Dialog.addMessage("You can also use a previous inset:\n-open the Biovoxxel plugin\n-click on the ROI of interest in the ROI Manager,\n-ROI is rotated, you need to rotate it again using the Biovoxxel plugin interface.");
 		Dialog.addMessage("Then click on 'create', wait for the creation of the inset, close the plugin and click on 'OK'.");
 		Dialog.show();
 		checkInserDone();
+		
+		if(checkROI){
+			while (roiManager("count") ==0) {
+				waitForUser("You forgot to add ROI to ROI manager... Redraw the ROI and enter Ctrl+T");
+			}
+		}
+		
 		rename("Inset-" +inset+1+ "-"+title);
 		selectImage(title);
 	}
+	setBatchMode("hide");
 	if (roiManager("count") > 0) roiManager("save", inputPath+"inset.zip");
 	
 	selectImage(title);
