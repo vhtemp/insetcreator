@@ -5,6 +5,9 @@ ImageJ macro for adjusting image brightness and generating multiple insets, base
 If you use this macro in your work, please cite the original Biovoxxel plugin:
 https://doi.org/10.5281/zenodo.7268127
 
+## Limitation
+So far, the plugin was build on RGB image made from several tiles. In the futur, the code will be updated to make it work on multiple stack/channel images.
+
 # Installation
 
 1. Download the ZIP file by clicking **Code > Download ZIP**.
