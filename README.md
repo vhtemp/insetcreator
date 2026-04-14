@@ -9,7 +9,7 @@ https://doi.org/10.5281/zenodo.7268127
 
 1. Download the ZIP file by clicking **Code > Download ZIP**.
 2. Extract the downloaded file.
-3. Copy the `insetCreator.ijm` file into the `Fiji.app/plugins` folder.
+3. Copy the `Inset_Creator.ijm` file into the `Fiji.app/plugins` folder.
 4. Restart Fiji.
 5. Open the plugin from **Plugins > insetCreator**.
 
