@@ -32,7 +32,7 @@ Note: output settings work properly only if the file is saved as TIFF.
 
 The ROIs used for cropping and for the different insets are saved as `crop.zip` and `inset.zip`, and the settings are saved as `settingInsetCreator.csv`.
 These files are reused to process the next images.
-The main image will be saved with "Mod-" + title of the image and the different "Inset-"+title of the image.
+The main image will be saved with "Mod-" + title of the image and the different insets: "Inset-"+title of the image.
 
 
 
