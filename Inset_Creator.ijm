@@ -70,6 +70,7 @@ for (img = 0; img < imgList.length; img++) {
     	setBatchMode("exit and display");
 		open(inputPath + File.separator + imgList[img]);
 		title = imgList[img];
+		print("Open the image: " + title);
 
 Dialog.create("Setting");
 Dialog.addMessage("---------------------------");
@@ -144,9 +145,10 @@ close("settingInsetCreator.csv");
 		roiManager("deselect");
 		if(roiManager("count")>0) roiManager("delete");
 		if(File.exists(inputPath+"inset.zip")) roiManager("open", inputPath+"inset.zip");
+		setBatchMode("exit and display");
+		
 	for (inset = 0; inset < insetNbr; inset++) {
 		selectImage(title);
-		setBatchMode("exit and display");
 		selectWindow("ROI Manager");
 		Dialog.createNonBlocking("Create Inset");
 		Dialog.addMessage("Inset: " + inset + 1);
@@ -158,20 +160,21 @@ close("settingInsetCreator.csv");
 		Dialog.addMessage("Then click on 'create', wait for the creation of the inset, close the plugin and click on 'OK'.");
 		Dialog.show();
 		checkInserDone();
+		rename("Inset-" +inset+1+ "-"+title);
 		
+		selectImage(title);
 		if(checkROI){
-			while (roiManager("count") ==0) {
+			while (roiManager("count") == 0) {
+				selectImage(title);
 				waitForUser("You forgot to add ROI to ROI manager... Redraw the ROI and enter Ctrl+T");
 			}
 		}
-		
-		rename("Inset-" +inset+1+ "-"+title);
-		selectImage(title);
 	}
 	setBatchMode("hide");
 	if (roiManager("count") > 0) roiManager("save", inputPath+"inset.zip");
 	
 	selectImage(title);
+	makeRectangle(0, 0, 0, 0);
 	rename("Mod-"+title);
 	
 	//Scale down the image and draw scalebar
