@@ -68,9 +68,9 @@ if (File.exists(inputPath+File.separator+"settingInsetCreator.csv")) {
 for (img = 0; img < imgList.length; img++) {
     if (endsWith(imgList[img], ".tif") && !startsWith(imgList[img], "Mod") && !startsWith(imgList[img], "Inset")) {
     	setBatchMode("exit and display");
+    	title = imgList[img];
     	print("Open the image: " + title);
 		open(inputPath + File.separator + imgList[img]);
-		title = imgList[img];
 		grayscaleImg = is("grayscale");
 		
 		if (grayscaleImg) {
@@ -82,7 +82,7 @@ for (img = 0; img < imgList.length; img++) {
 			rmBgCh = newArray(channels);
 		}
 		
-
+if (img==0) {
 Dialog.create("Setting");
 Dialog.addMessage("---------------------------");
 Dialog.addMessage("Scale bar setting");
@@ -92,18 +92,8 @@ Dialog.addNumber("Length of the scale bar for the inset: ", iscLength);
 Dialog.addNumber("thickness: ", scThickness);
 Dialog.addNumber("font: ", scFond);
 Dialog.addChoice("color", whiteblack, scColor);
-
-if (grayscaleImg && adjBrightness) {
-	Dialog.addMessage("---------------------------");
-	Dialog.addMessage("Seeting channel brightness and color");
-	Dialog.addMessage("---------------------------");
-	for (channel = 0; channel < channels; channel++) {
-		Dialog.addChoice("Color of the channel " +channel+1, getList("LUTs"));
-		Dialog.addSlider("Minimal Brightness (Can be adjusted latter): ", min, max, min);
-		Dialog.addSlider("Maximal Brightness (Can be adjusted latter): ", min, max, max);
-		Dialog.addNumber("Remove background - sigma: \nTo disable it, enter 0", 0);
-	}
-}
+Dialog.addToSameRow();
+Dialog.addCheckbox("Adjust the color for each image? ", true);
 
 Dialog.addMessage("");
 Dialog.addMessage("---------------------------");
@@ -125,8 +115,26 @@ iscLength = Dialog.getNumber();
 scThickness = Dialog.getNumber();
 scFond = Dialog.getNumber();
 scColor = Dialog.getChoice();
+dim=Dialog.getChoice();
+size = Dialog.getNumber();
+dpi = Dialog.getNumber();
+format = Dialog.getChoice();
 
 if (grayscaleImg && adjBrightness) {
+	Dialog.createNonBlocking("Setting for gray scale image: color and brightness");
+	Dialog.addMessage("---------------------------");
+	Dialog.addMessage("Seeting channel brightness and color");
+	Dialog.addMessage("---------------------------");
+	Dialog.addCheckbox("Adjust the color and brightness for each image? ", true);
+	for (channel = 0; channel < channels; channel++) {
+		Dialog.addChoice("Color of the channel " +channel+1, getList("LUTs"));
+		Dialog.addSlider("Minimal Brightness (Can be adjusted latter): ", min, max, min);
+		Dialog.addSlider("Maximal Brightness (Can be adjusted latter): ", min, max, max);
+		Dialog.addNumber("Remove background - sigma: \nTo disable it, enter 0", 0);
+	}
+	Dialog.show();
+	
+	adjChannelForEachImg = Dialog.getCheckbox();
 	for (channel = 0; channel < channels; channel++) {
 		colorCh[channel] = Dialog.getString();
 		minBrightCh[channel] = Dialog.getNumber();
@@ -134,31 +142,9 @@ if (grayscaleImg && adjBrightness) {
 		rmBgCh[channel] = Dialog.getNumber();
 	}
 }
-
-dim=Dialog.getChoice();
-size = Dialog.getNumber();
-dpi = Dialog.getNumber();
-format = Dialog.getChoice();
-
-Table.create("Setting InsetMarker");
-Table.set("scLength", 0,  scLength);
-Table.set("iscLength", 0,  iscLength);
-Table.set("scThickness", 0, scThickness);
-Table.set("scFond", 0, scFond);
-Table.set("scColor", 0, scColor);
-if (grayscaleImg && adjBrightness) {
-	Table.setColumn("colorCh", colorCh);
-	Table.setColumn("minBrightCh", minBrightCh);
-	Table.setColumn("maxBrightCh", maxBrightCh);
-	Table.setColumn("rmBgCh", rmBgCh);
 }
-Table.set("dim", 0, dim);
-Table.set("size", 0, size);
-Table.set("dpi", 0, dpi);
-Table.set("format", 0, format);
-Table.update;
-Table.save(inputPath+File.separator+"settingInsetCreator.csv");
-close("settingInsetCreator.csv");
+
+
 
 	if (adjBrightness) {
 		if (!grayscaleImg) {
@@ -263,6 +249,26 @@ if (format == "TIFF") {
 	}
 }
 
+Table.create("Setting InsetMarker");
+Table.set("scLength", 0,  scLength);
+Table.set("iscLength", 0,  iscLength);
+Table.set("scThickness", 0, scThickness);
+Table.set("scFond", 0, scFond);
+Table.set("scColor", 0, scColor);
+if (grayscaleImg && adjBrightness) {
+	Table.set("adjChannelForEachImg", 0, adjChannelForEachImg);
+	Table.setColumn("colorCh", colorCh);
+	Table.setColumn("minBrightCh", minBrightCh);
+	Table.setColumn("maxBrightCh", maxBrightCh);
+	Table.setColumn("rmBgCh", rmBgCh);
+}
+Table.set("dim", 0, dim);
+Table.set("size", 0, size);
+Table.set("dpi", 0, dpi);
+Table.set("format", 0, format);
+Table.update;
+Table.save(inputPath+File.separator+"settingInsetCreator.csv");
+close("settingInsetCreator.csv");
 run("Close All");
 }
 }
