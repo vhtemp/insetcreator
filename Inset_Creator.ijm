@@ -67,6 +67,7 @@ if (File.exists(inputPath+File.separator+"settingInsetCreator.csv")) {
 	format = "SVG";
 }
 
+firstImage = true;
 for (img = 0; img < imgList.length; img++) {
     if (endsWith(imgList[img], ".tif") && !startsWith(imgList[img], "Mod") && !startsWith(imgList[img], "Inset")) {
     	setBatchMode("exit and display");
@@ -84,7 +85,7 @@ for (img = 0; img < imgList.length; img++) {
 			rmBgCh = newArray(channels);
 		}
 		
-if (img==0) {
+if (firstImage) {
 Dialog.create("Setting");
 Dialog.addMessage("---------------------------");
 Dialog.addMessage("Scale bar setting");
@@ -129,7 +130,9 @@ if (grayscaleImg && adjBrightness) {
 	Dialog.addMessage("---------------------------");
 	Dialog.addCheckbox("Adjust the color and brightness for each image? ", true);
 	for (channel = 0; channel < channels; channel++) {
-		Dialog.addChoice("Color of the channel " +channel+1, getList("LUTs"));
+		Dialog.addMessage("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+		Dialog.addMessage("Channel " + channel+1);
+		Dialog.addChoice("Color: " , getList("LUTs"));
 		Dialog.addSlider("Minimal Brightness (Can be adjusted latter): ", min, max, min);
 		Dialog.addSlider("Maximal Brightness (Can be adjusted latter): ", min, max, max);
 		Dialog.addNumber("Remove background - sigma: \nTo disable it, enter 0", 0);
@@ -148,8 +151,8 @@ if (grayscaleImg && adjBrightness) {
 
 	if (rotate) {
 		Dialog.create("Rotate");
-		Dialog.addChoice("Rotation", newArray("90° right", "90° left", "180°"));
-		Dialog.addChoice("Flip", newArray("horizontally", "vertically"));
+		Dialog.addChoice("Rotation", newArray("none","90° right", "90° left", "180°"),"none");
+		Dialog.addChoice("Flip", newArray("none", "horizontally", "vertically"), "none");
 		Dialog.show();
 		
 		rotation = Dialog.getChoice();
@@ -168,17 +171,21 @@ if (grayscaleImg && adjBrightness) {
 		run("Brightness/Contrast...");
 		waitForUser("Adjust the brightness...");
 	} else if (grayscaleImg) {
-		run("RGB Stack");
+		run("Split Channels");
+		mergingArray = newArray("*None*", "*None*", "*None*", "*None*", "*None*", "*None*", "*None*", "*None*");
 		for (channel = 0; channel < channels; channel++) {
-			setSlice(channel+1);
-			run("Subtract Background...","rolling="+rmBgCh[channel]);
+			selectImage("C"+channel+1+"-"+title);
+			mergingArray[channel] = getTitle();
+			if (rmBgCh[channel]>0) run("Subtract Background...","rolling="+rmBgCh[channel]);
 			run(colorCh[channel]);
 			setMinAndMax(minBrightCh[channel], maxBrightCh[channel]);
 			waitForUser("Adjust the brightness and color...");
-			getMinAndMax(minBrightCh, maxBrightCh);
+			getMinAndMax(minBrightCh[channel], maxBrightCh[channel]);
 		}
 	}
 	}
+	mergeS = "c1=" +mergingArray[0]+ " c2=" +mergingArray[1]+ "  c3=" +mergingArray[2]+ "  c4=" +mergingArray[3]+ "  c5=" +mergingArray[4]+ "  c6=" +mergingArray[5]+ "  c7=" +mergingArray[6]+ "  c8=" +mergingArray[7];
+	run("Merge Channels...", mergeS+" create");
 	
 	if (crop) {
 		setTool(0);
@@ -266,6 +273,21 @@ if (format == "TIFF") {
 	}
 }
 
+print("Save setting in " + inputPath);
+print("Scale bar length main image: " + scLength);
+print("Scale bar length inset: " + iscLength);
+print("Scale bar thickness: " + scThickness);
+print("Scale bar fond: " + scFond);
+print("Scale bar color: " + scColor);
+if (grayscaleImg && adjBrightness) {
+	for (channel = 0; channel < channels; channel++) {
+	print("Channel " +channel+1+ "in color "+colorCh[channel]+ "min & max brightness: " +minBrightCh[channel]+ "-" +maxBrightCh[channel]+ ". Sigma rolling ball: " +rmBgCh[channel]);
+}
+print("Fixed dimension: " + dim);
+print("Size dimension: " + size);
+print("dpi: " + dpi);
+print("format: " + format);
+
 Table.create("Setting InsetMarker");
 Table.set("scLength", 0,  scLength);
 Table.set("iscLength", 0,  iscLength);
@@ -287,6 +309,8 @@ Table.update;
 Table.save(inputPath+File.separator+"settingInsetCreator.csv");
 close("settingInsetCreator.csv");
 run("Close All");
+firstImage = false;
+}
 }
 }
 
