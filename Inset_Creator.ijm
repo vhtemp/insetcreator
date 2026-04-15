@@ -16,6 +16,7 @@ Dialog.addMessage("Cite the newest version of the BioVoxxel Figure Tools using h
 Dialog.addMessage("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 Dialog.addDirectory("Folder containing the images: ","");
 Dialog.addCheckbox("Adjust brightness:", true);
+Dialog.addCheckbox("Rotate the image: ", false);
 Dialog.addCheckbox("Crop the image:", false);
 Dialog.addNumber("Number of insert: ", 1);
 Dialog.addCheckbox("Check everytime that ROI was added in ROI Manager", true);
@@ -23,6 +24,7 @@ Dialog.show();
 
 inputPath = Dialog.getString();
 adjBrightness = Dialog.getCheckbox();
+rotate = Dialog.getCheckbox();
 crop = Dialog.getCheckbox();
 insetNbr = Dialog.getNumber();
 checkROI = Dialog.getCheckbox();
@@ -144,6 +146,21 @@ if (grayscaleImg && adjBrightness) {
 }
 }
 
+	if (rotate) {
+		Dialog.create("Rotate");
+		Dialog.addChoice("Rotation", newArray("90° right", "90° left", "180°"));
+		Dialog.addChoice("Flip", newArray("horizontally", "vertically"));
+		Dialog.show();
+		
+		rotation = Dialog.getChoice();
+		flip = Dialog.getChoice();
+		
+		if (rotation == "90° right") run("Rotate 90 Degrees Right");
+		if (rotation == "90° left") run("Rotate 90 Degrees Left");
+		if (rotation == "180°") run("Rotate... ", "angle=180 interpolation=Bilinear");
+		if (flip == "horizontally") run("Flip Horizontally");
+		if (flip == "vertically") run("Flip Vertically");
+	}
 
 
 	if (adjBrightness) {
@@ -155,7 +172,7 @@ if (grayscaleImg && adjBrightness) {
 		for (channel = 0; channel < channels; channel++) {
 			setSlice(channel+1);
 			run("Subtract Background...","rolling="+rmBgCh[channel]);
-			run(colorCh[channel])
+			run(colorCh[channel]);
 			setMinAndMax(minBrightCh[channel], maxBrightCh[channel]);
 			waitForUser("Adjust the brightness and color...");
 			getMinAndMax(minBrightCh, maxBrightCh);
