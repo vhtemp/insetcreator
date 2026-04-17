@@ -144,8 +144,6 @@ if (grayscaleImg && adjBrightness) {
 			rmBgCh[channel] = 0;
 		}
 	
-	minBrightCh = min;
-	maxBrightCh = max;
 	}
 	Dialog.createNonBlocking("Setting for gray scale image: color and brightness");
 	Dialog.addMessage("---------------------------");
@@ -257,8 +255,6 @@ if (grayscaleImg && adjBrightness) {
 			}
 		}
 	}
-	
-	setBatchMode("hide");
 
 	if (roiManager("count") > 0) roiManager("save", inputPath+"inset.zip");
 	
@@ -279,6 +275,7 @@ if (grayscaleImg && adjBrightness) {
 		selectImage(wdArray[wd]);
 		pxHeightImg = getHeight();
 		pxWidthImg = getWidth();
+		if (channel > 1) setSlice(1);
 		
 		if (dim == "Height") ratio = ((size/25.4)*dpi)/pxHeightImg;
 		if (dim == "Width") ratio = ((size/25.4)*dpi)/pxWidthImg;
