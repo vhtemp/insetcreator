@@ -28,7 +28,7 @@ rotate = Dialog.getCheckbox();
 crop = Dialog.getCheckbox();
 insetNbr = Dialog.getNumber();
 checkROI = Dialog.getCheckbox();
-imgList = getFileList(inputPath);
+fileList = getFileList(inputPath);
 
 whiteblack = newArray("White","Black");
 
@@ -69,13 +69,14 @@ if (File.exists(inputPath+File.separator+"settingInsetCreator.csv")) {
 }
 
 firstImage = true;
-for (img = 0; img < imgList.length; img++) {
-    if (endsWith(imgList[img], ".tif") && !startsWith(imgList[img], "Mod") && !startsWith(imgList[img], "Inset")) {
+for (img = 0; img < fileList.length; img++) {
+    if (endsWith(fileList[img], ".tif") && !startsWith(fileList[img], "Mod") && !startsWith(fileList[img], "Inset") && !startsWith(fileList[img], "Merge") && !startsWith(fileList[img], "Channel")) {
     	setBatchMode("exit and display");
-    	title = imgList[img];
+    	title = fileList[img];
     	print("Open the image: " + title);
-		open(inputPath + File.separator + imgList[img]);
+		open(inputPath + File.separator + fileList[img]);
 		grayscaleImg = is("grayscale");
+		print("is gray scale?", grayscaleImg);
 		
 if (firstImage) {
 	if (!preexistingSetting) {
@@ -258,6 +259,7 @@ if (grayscaleImg && adjBrightness) {
 
 	if (roiManager("count") > 0) roiManager("save", inputPath+"inset.zip");
 	
+	setBatchMode("hide");
 	selectImage(title);
 	makeRectangle(0, 0, 0, 0);
 	rename("Mod-"+title);
@@ -298,9 +300,27 @@ if (grayscaleImg && adjBrightness) {
 if (format == "SVG") run("Export all images as SVG");
 if (format == "TIFF") {
 	for (wd = 0; wd < wdArray.length; wd++) {
-		selectImage(wdArray[wd]);
+		title = wdArray[wd];
+		selectImage(title);
+		if (grayscaleImg) {
+			run("Duplicate...", "title=Merge duplicate");
+			run("Flatten");
+			rename("Merge-"+title);
+			saveAs("tiff", inputPath+File.separator+"Merge-"+title);
+			close("Merge");
+			
+			selectImage(title);
+			getDimensions(width, height, channels, slices, frames);
+			run("Split Channels");
+			for (channel = 0; channel < channels; channel++) {
+				selectImage("C"+channel+1+"-"+title);
+				run("Flatten");
+				saveAs("tiff", inputPath+File.separator+"Channel"+channel+1+"-"+title);
+			}
+		} else {
 		run("Flatten");
 		saveAs("tiff", inputPath+File.separator+wdArray[wd]);
+		}
 	}
 }
 
