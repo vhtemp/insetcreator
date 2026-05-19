@@ -277,6 +277,12 @@ if (grayscaleImg && adjBrightness) {
 		pxWidthImg = getWidth();
 		if (channel > 1) setSlice(1);
 		
+		if (wdArray[wd].contains("Mod-")) {
+			run("Scale Bar...", "width="+scLength+" height=0 thickness="+scThickness+" font="+scFond+" color="+scColor+" bold overlay");
+		} else {
+			run("Scale Bar...", "width="+iscLength+" height=0 thickness="+scThickness+" font="+scFond+" color="+scColor+" bold overlay");
+		}
+		
 		if (dim == "Height") ratio = ((size/25.4)*dpi)/pxHeightImg;
 		if (dim == "Width") ratio = ((size/25.4)*dpi)/pxWidthImg;
 
@@ -287,11 +293,6 @@ if (grayscaleImg && adjBrightness) {
 		run("Scale...", "x=" +ratio+ " y=" +ratio+ " interpolation=Bicubic average create");
 		close(wdArray[wd]);
 		rename(wdArray[wd]);
-		if (wdArray[wd].contains("Mod-")) {
-			run("Scale Bar...", "width="+scLength+" height=0 thickness="+scThickness+" font="+scFond+" color="+scColor+" bold overlay");
-		} else {
-			run("Scale Bar...", "width="+iscLength+" height=0 thickness="+scThickness+" font="+scFond+" color="+scColor+" bold overlay");
-		}
 	}
 
 if (format == "SVG") run("Export all images as SVG");
