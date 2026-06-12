@@ -129,9 +129,10 @@ size = Dialog.getNumber();
 dpi = Dialog.getNumber();
 format = Dialog.getChoice();
 
+getDimensions(width, height, channels, slices, frames);
+getMinAndMax(min, max);
+
 if (grayscaleImg && adjBrightness) {
-	getDimensions(width, height, channels, slices, frames);
-	getMinAndMax(min, max);
 	
 	if (!preexistingSetting) {
 		colorCh = newArray(channels);
@@ -206,10 +207,10 @@ if (grayscaleImg && adjBrightness) {
 			getMinAndMax(minBrightCh[channel], maxBrightCh[channel]);
 			close("B&C");
 		}
+		mergeS = "c1=" +mergingArray[0]+ " c2=" +mergingArray[1]+ "  c3=" +mergingArray[2]+ "  c4=" +mergingArray[3]+ "  c5=" +mergingArray[4]+ "  c6=" +mergingArray[5]+ "  c7=" +mergingArray[6]+ "  c8=" +mergingArray[7];
+		run("Merge Channels...", mergeS+" create");
 	}
 	}
-	mergeS = "c1=" +mergingArray[0]+ " c2=" +mergingArray[1]+ "  c3=" +mergingArray[2]+ "  c4=" +mergingArray[3]+ "  c5=" +mergingArray[4]+ "  c6=" +mergingArray[5]+ "  c7=" +mergingArray[6]+ "  c8=" +mergingArray[7];
-	run("Merge Channels...", mergeS+" create");
 	
 	if (crop) {
 		setTool(0);
@@ -277,7 +278,7 @@ if (grayscaleImg && adjBrightness) {
 		selectImage(wdArray[wd]);
 		pxHeightImg = getHeight();
 		pxWidthImg = getWidth();
-		if (channel > 1) setSlice(1);
+		if (channels > 1) setSlice(1);
 		
 		if (wdArray[wd].contains("Mod-")) {
 			run("Scale Bar...", "width="+scLength+" height=0 thickness="+scThickness+" font="+scFond+" color="+scColor+" bold overlay");
