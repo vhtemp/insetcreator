@@ -22,20 +22,18 @@ Dialog.addNumber("Number of insert: ", 1);
 Dialog.addCheckbox("Check everytime that ROI was added in ROI Manager", true);
 Dialog.show();
 
-inputPath = Dialog.getString();
+inputDir = Dialog.getString();
 adjBrightness = Dialog.getCheckbox();
 rotate = Dialog.getCheckbox();
 crop = Dialog.getCheckbox();
 insetNbr = Dialog.getNumber();
 checkROI = Dialog.getCheckbox();
-fileList = getFileList(inputPath);
+imgList = getFileList(inputDir);
 
-whiteblack = newArray("White","Black");
-
-if (File.exists(inputPath+File.separator+"settingInsetCreator.csv")) {
+if (File.exists(inputDir+File.separator+"settingInsetCreator.csv")) {
 	preexistingSetting = true;
 	print("Loading setting...");
-	Table.open(inputPath+File.separator+"settingInsetCreator.csv");
+	Table.open(inputDir+File.separator+"settingInsetCreator.csv");
 	scLength = Table.get("scLength", 0);
 	print("Length of the scale bar for the main image: " + scLength);
 	iscLength = Table.get("iscLength", 0);
@@ -69,21 +67,22 @@ if (File.exists(inputPath+File.separator+"settingInsetCreator.csv")) {
 }
 
 firstImage = true;
-for (img = 0; img < fileList.length; img++) {
-    if (endsWith(fileList[img], ".tif") && !startsWith(fileList[img], "Mod") && !startsWith(fileList[img], "Inset") && !startsWith(fileList[img], "Merge") && !startsWith(fileList[img], "Channel")) {
+
+for (img = 0; img < imgList.length; img++) {
+    if (endsWith(imgList[img], ".tif") && !startsWith(imgList[img], "Mod") && !startsWith(imgList[img], "Inset")) {
     	setBatchMode("exit and display");
-    	title = fileList[img];
-    	print("Open the image: " + title);
-		open(inputPath + File.separator + fileList[img]);
-		grayscaleImg = is("grayscale");
-		print("is gray scale?", grayscaleImg);
+    	print("Open the image: " + imgList[img]);
+		open(inputDir + File.separator + imgList[img]);
+		title = correctGetTitle(); //To remove space in the image name if present
+		typeImage = checkImageType();
+		imgHeight = getHeight();
 		
 if (firstImage) {
 	if (!preexistingSetting) {
 	scLength = 500;
 	iscLength = 25;
-	scThickness = 1;
-	scFond = 11;
+	scThickness = imgHeight*(100/15000);
+	scFond = imgHeight*(500/15000);
 	scColor = "Black";
 	dim = "Height";
 	size = 50;
@@ -91,14 +90,16 @@ if (firstImage) {
 	format = "SVG";
 	}
 	
+whiteblack = newArray("White","Black");
+
 Dialog.create("Setting");
 Dialog.addMessage("---------------------------");
 Dialog.addMessage("Scale bar setting");
 Dialog.addMessage("---------------------------");
 Dialog.addNumber("Length of the scale bar for the main image: ", scLength);
 Dialog.addNumber("Length of the scale bar for the inset: ", iscLength);
-Dialog.addNumber("thickness: ", scThickness);
-Dialog.addNumber("font: ", scFond);
+Dialog.addNumber("thickness (in px): ", scThickness);
+Dialog.addNumber("font (in px): ", scFond);
 Dialog.addChoice("color", whiteblack, scColor);
 Dialog.addToSameRow();
 Dialog.addCheckbox("Adjust the color for each image? ", true);
@@ -129,10 +130,17 @@ size = Dialog.getNumber();
 dpi = Dialog.getNumber();
 format = Dialog.getChoice();
 
-getDimensions(width, height, channels, slices, frames);
-getMinAndMax(min, max);
+// Define RGBcolor here that will be used for create inset
+if (scColor=="Black") {
+	scRGBColor = "000, 000, 000";
+} else {
+	scRGBColor = "255, 255, 255";
+}
+//
 
-if (grayscaleImg && adjBrightness) {
+if (typeImage != "RGB" && adjBrightness) {
+	getDimensions(width, height, channels, slices, frames);
+	getMinAndMax(min, max);
 	
 	if (!preexistingSetting) {
 		colorCh = newArray(channels);
@@ -190,15 +198,15 @@ if (grayscaleImg && adjBrightness) {
 
 
 	if (adjBrightness) {
-		if (!grayscaleImg) {
+		if (typeImage == "RGB") {
 		run("Brightness/Contrast...");
 		waitForUser("Adjust the brightness...");
-	} else if (grayscaleImg) {
+	} else if (typeImage != "RGB") {
 		run("Split Channels");
 		mergingArray = newArray("*None*", "*None*", "*None*", "*None*", "*None*", "*None*", "*None*", "*None*");
 		for (channel = 0; channel < channels; channel++) {
 			selectImage("C"+channel+1+"-"+title);
-			mergingArray[channel] = getTitle();
+			mergingArray[channel] = getTitle(); 
 			if (rmBgCh[channel]>0) run("Subtract Background...","rolling="+rmBgCh[channel]);
 			run(colorCh[channel]);
 			setMinAndMax(minBrightCh[channel], maxBrightCh[channel]);
@@ -207,18 +215,19 @@ if (grayscaleImg && adjBrightness) {
 			getMinAndMax(minBrightCh[channel], maxBrightCh[channel]);
 			close("B&C");
 		}
-		mergeS = "c1=" +mergingArray[0]+ " c2=" +mergingArray[1]+ "  c3=" +mergingArray[2]+ "  c4=" +mergingArray[3]+ "  c5=" +mergingArray[4]+ "  c6=" +mergingArray[5]+ "  c7=" +mergingArray[6]+ "  c8=" +mergingArray[7];
-		run("Merge Channels...", mergeS+" create");
 	}
 	}
+	
+	mergeS = "c1=" +mergingArray[0]+ " c2=" +mergingArray[1]+ "  c3=" +mergingArray[2]+ "  c4=" +mergingArray[3]+ "  c5=" +mergingArray[4]+ "  c6=" +mergingArray[5]+ "  c7=" +mergingArray[6]+ "  c8=" +mergingArray[7];
+	run("Merge Channels...", mergeS+" create");
 	
 	if (crop) {
 		setTool(0);
 		roiManager("deselect");
 		if(roiManager("count")>0) roiManager("delete");
-		if(File.exists(inputPath+"crop.zip")) roiManager("open", inputPath+"crop.zip");
+		if(File.exists(inputDir+"crop.zip")) roiManager("open", inputDir+"crop.zip");
 		waitForUser("Select ROI for cropping.\nAdd it to the ROI Manager (Ctrl+T), if you want to save it.\nYou can also load 'crop' ROI from a previous processing step");
-		if (roiManager("count") > 0) roiManager("save", inputPath+"crop.zip");
+		if (roiManager("count") > 0) roiManager("save", inputDir+"crop.zip");
 		if(checkROI){
 			while (roiManager("count") ==0) {
 				waitForUser("You forgot to add ROI to ROI manager... Enter Ctrl+T");
@@ -231,36 +240,34 @@ if (grayscaleImg && adjBrightness) {
 		setTool(0);
 		roiManager("deselect");
 		if(roiManager("count")>0) roiManager("delete");
-		if(File.exists(inputPath+"inset.zip")) roiManager("open", inputPath+"inset.zip");
+		if(File.exists(inputDir+"inset.zip")) roiManager("open", inputDir+"inset.zip");
 		setBatchMode("exit and display");
 		
 	for (inset = 0; inset < insetNbr; inset++) {
 		selectImage(title);
 		selectWindow("ROI Manager");
+		run("Create framed inset zoom");
+
 		Dialog.createNonBlocking("Create Inset");
 		Dialog.addMessage("Inset: " + inset + 1);
-		Dialog.addMessage("Open Biovoxxel Figure Tool > Create framed inset zoom");
 		Dialog.addMessage("Move the square that appears in the top left to the zone of interest.");
+		Dialog.addMessage("For consistency, indicate:");
+		Dialog.addMessage("	-"+scThickness+" as Frame width");
+		Dialog.addMessage("	-"+scColor+" as Frame color");
 		Dialog.addMessage("To modify the size of the square, the color of the inset, and so on, use only the user interface of the Biovoxxel plugin.\nNormally the interface is automatically open");
-		Dialog.addMessage("Add it to the ROI Manager (Ctrl+T) if you want to save it; it will be saved as inset.zip.");
 		Dialog.addMessage("You can also use a previous inset:\n-open the Biovoxxel plugin\n-click on the ROI of interest in the ROI Manager,\n-ROI is rotated, you need to rotate it again using the Biovoxxel plugin interface.");
-		Dialog.addMessage("Then click on 'create', wait for the creation of the inset, close the plugin and click on 'OK'.");
+		Dialog.addMessage("Then click on 'OK'.");
+		Dialog.addMessage("WARNING: Unclick 'Add scale Bar'");
 		Dialog.show();
+		roiManager("add");
+		eval("script", "importClass(Packages.inset.creator.InsetProcessor); InsetProcessor.createInset();");
 		checkInserDone();
 		rename("Inset-" +inset+1+ "-"+title);
-		
 		selectImage(title);
-		if(checkROI){
-			while (roiManager("count") == 0) {
-				selectImage(title);
-				waitForUser("You forgot to add ROI to ROI manager... Redraw the ROI and enter Ctrl+T");
-			}
-		}
 	}
 
-	if (roiManager("count") > 0) roiManager("save", inputPath+"inset.zip");
+	if (roiManager("count") > 0) roiManager("save", inputDir+"inset.zip");
 	
-	setBatchMode("hide");
 	selectImage(title);
 	makeRectangle(0, 0, 0, 0);
 	rename("Mod-"+title);
@@ -278,7 +285,7 @@ if (grayscaleImg && adjBrightness) {
 		selectImage(wdArray[wd]);
 		pxHeightImg = getHeight();
 		pxWidthImg = getWidth();
-		if (channels > 1) setSlice(1);
+		if (channel > 1) setSlice(1);
 		
 		if (wdArray[wd].contains("Mod-")) {
 			run("Scale Bar...", "width="+scLength+" height=0 thickness="+scThickness+" font="+scFond+" color="+scColor+" bold overlay");
@@ -301,37 +308,19 @@ if (grayscaleImg && adjBrightness) {
 if (format == "SVG") run("Export all images as SVG");
 if (format == "TIFF") {
 	for (wd = 0; wd < wdArray.length; wd++) {
-		title = wdArray[wd];
-		selectImage(title);
-		if (grayscaleImg) {
-			run("Duplicate...", "title=Merge duplicate");
-			run("Flatten");
-			rename("Merge-"+title);
-			saveAs("tiff", inputPath+File.separator+"Merge-"+title);
-			close("Merge");
-			
-			selectImage(title);
-			getDimensions(width, height, channels, slices, frames);
-			run("Split Channels");
-			for (channel = 0; channel < channels; channel++) {
-				selectImage("C"+channel+1+"-"+title);
-				run("Flatten");
-				saveAs("tiff", inputPath+File.separator+"Channel"+channel+1+"-"+title);
-			}
-		} else {
+		selectImage(wdArray[wd]);
 		run("Flatten");
-		saveAs("tiff", inputPath+File.separator+wdArray[wd]);
-		}
+		saveAs("tiff", inputDir+File.separator+wdArray[wd]);
 	}
 }
 
-print("Save setting in " + inputPath);
+print("Save setting in " + inputDir);
 print("Scale bar length main image: " + scLength);
 print("Scale bar length inset: " + iscLength);
 print("Scale bar thickness: " + scThickness);
 print("Scale bar fond: " + scFond);
 print("Scale bar color: " + scColor);
-if (grayscaleImg && adjBrightness) {
+if (typeImage != "RGB" && adjBrightness) {
 	for (channel = 0; channel < channels; channel++) {
 	print("Channel " +channel+1+ "in color "+colorCh[channel]+ ". Min & max brightness: " +minBrightCh[channel]+ "-" +maxBrightCh[channel]+ ". Sigma rolling ball: " +rmBgCh[channel]);
 }
@@ -351,7 +340,7 @@ Table.set("dim", 0, dim);
 Table.set("size", 0, size);
 Table.set("dpi", 0, dpi);
 Table.set("format", 0, format);
-if (grayscaleImg && adjBrightness) {
+if (typeImage != "RGB" && adjBrightness) {
 	Table.set("adjChannelForEachImg", 0, adjChannelForEachImg);
 	Table.setColumn("colorCh", colorCh);
 	Table.setColumn("minBrightCh", minBrightCh);
@@ -359,7 +348,7 @@ if (grayscaleImg && adjBrightness) {
 	Table.setColumn("rmBgCh", rmBgCh);
 }
 Table.update;
-Table.save(inputPath+File.separator+"settingInsetCreator.csv");
+Table.save(inputDir+File.separator+"settingInsetCreator.csv");
 close("settingInsetCreator.csv");
 run("Close All");
 firstImage = false;
@@ -384,3 +373,25 @@ function checkInserDone(){
 		if (absent==true) waitForUser("You forgot to click on \"Create\" !! ");
 			}
 }
+
+function checkImageType(){
+	t = bitDepth();
+if (t == 24)
+    return "RGB";
+else if (t == 8)
+    return "8-bit";
+else if (t == 16)
+    return "16-bit";
+else if (t == 32)
+    return "32-bit float";
+}
+
+function correctGetTitle() {
+	title = getTitle();
+	if (title.contains(" ")) {
+		title = replace(getTitle(), " ", "_");
+		rename(title);
+	}
+	return title;
+}
+
