@@ -16,6 +16,7 @@ Dialog.addMessage("Cite the newest version of the BioVoxxel Figure Tools using h
 Dialog.addMessage("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 Dialog.addDirectory("Folder containing the images: ","");
 Dialog.addCheckbox("Adjust brightness:", true);
+Dialog.addCheckbox("Perform color balance (only for RGB image):", true);
 Dialog.addCheckbox("Rotate the image: ", false);
 Dialog.addCheckbox("Crop the image:", false);
 Dialog.addNumber("Number of insert: ", 1);
@@ -24,6 +25,7 @@ Dialog.show();
 
 inputDir = Dialog.getString();
 adjBrightness = Dialog.getCheckbox();
+adjColorBalance = Dialog.getCheckbox();
 rotate = Dialog.getCheckbox();
 crop = Dialog.getCheckbox();
 insetNbr = Dialog.getNumber();
@@ -77,108 +79,128 @@ for (img = 0; img < imgList.length; img++) {
 		typeImage = checkImageType();
 		imgHeight = getHeight();
 		
-if (firstImage) {
-	if (!preexistingSetting) {
-	scLength = 500;
-	iscLength = 25;
-	scThickness = imgHeight*(100/15000);
-	scFond = imgHeight*(500/15000);
-	scColor = "Black";
-	dim = "Height";
-	size = 50;
-	dpi = 300;
-	format = "SVG";
-	}
-	
-whiteblack = newArray("White","Black");
-
-Dialog.create("Setting");
-Dialog.addMessage("---------------------------");
-Dialog.addMessage("Scale bar setting");
-Dialog.addMessage("---------------------------");
-Dialog.addNumber("Length of the scale bar for the main image: ", scLength);
-Dialog.addNumber("Length of the scale bar for the inset: ", iscLength);
-Dialog.addNumber("thickness (in px): ", scThickness);
-Dialog.addNumber("font (in px): ", scFond);
-Dialog.addChoice("color", whiteblack, scColor);
-Dialog.addToSameRow();
-Dialog.addCheckbox("Adjust the color for each image? ", true);
-
-Dialog.addMessage("");
-Dialog.addMessage("---------------------------");
-Dialog.addMessage("Save Setting");
-Dialog.addMessage("---------------------------");
-Dialog.addChoice("Choose dimension", newArray("Height","Width"), dim);
-Dialog.addNumber("Image height in mm", size);
-Dialog.addNumber("DPI for image import", dpi);
-Dialog.addChoice("Format of the image", newArray("SVG","TIFF"), format);
-Dialog.addMessage("");
-Dialog.addMessage("Note regarding image saving:");
-Dialog.addMessage("Initially, Inkscape uses a resolution of 96 dpi,\nwhile Illustrator uses a resolution of 72 dpi\nwhen importing images.");
-Dialog.addMessage("In Inkscape, you can adjust the import resolution to ensure that the specified size is respected\n(Edit > Preferences > Import/Export > Import Resolution)\nIt does not work with Illustrator");
-Dialog.addMessage("Moreover, the specified size will only be preserved if the image is saved as\na TIFF (in which case, the scale bars and inset rectangles cannot be\nmodified). If you want to be able to modify the scale bars and inset\nrectangles, you must select SVG as the save format.");
-Dialog.show();
-
-scLength = Dialog.getNumber();
-iscLength = Dialog.getNumber();
-scThickness = Dialog.getNumber();
-scFond = Dialog.getNumber();
-scColor = Dialog.getChoice();
-scAskColor = Dialog.getCheckbox();
-dim=Dialog.getChoice();
-size = Dialog.getNumber();
-dpi = Dialog.getNumber();
-format = Dialog.getChoice();
-
-// Define RGBcolor here that will be used for create inset
-if (scColor=="Black") {
-	scRGBColor = "000, 000, 000";
-} else {
-	scRGBColor = "255, 255, 255";
-}
-//
-
-if (typeImage != "RGB" && adjBrightness) {
-	getDimensions(width, height, channels, slices, frames);
-	getMinAndMax(min, max);
-	
-	if (!preexistingSetting) {
-		colorCh = newArray(channels);
-		minBrightCh = newArray(channels);
-		maxBrightCh = newArray(channels);
-		rmBgCh = newArray(channels);
-		for (channel = 0; channel < channels; channel++) {
-			colorCh[channel] = "Grays";
-			minBrightCh[channel] = min;
-			maxBrightCh[channel] = max;
-			rmBgCh[channel] = 0;
+	if (firstImage) {
+		if (!preexistingSetting) {
+			scLength = 500;
+			iscLength = 25;
+			scThickness = imgHeight*(100/15000);
+			scFond = imgHeight*(500/15000);
+			scColor = "Black";
+			dim = "Height";
+			size = 50;
+			dpi = 300;
+			format = "SVG";
 		}
 	
-	}
-	Dialog.createNonBlocking("Setting for gray scale image: color and brightness");
-	Dialog.addMessage("---------------------------");
-	Dialog.addMessage("Seeting channel brightness and color");
-	Dialog.addMessage("---------------------------");
-	Dialog.addCheckbox("Adjust the color and brightness for each image? ", true);
-	for (channel = 0; channel < channels; channel++) {
-		Dialog.addMessage("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-		Dialog.addMessage("Channel " + channel+1);
-		Dialog.addChoice("Color: " , getList("LUTs"), colorCh[channel]);
-		Dialog.addSlider("Minimal Brightness (Can be adjusted latter): ", min, max, minBrightCh[channel]);
-		Dialog.addSlider("Maximal Brightness (Can be adjusted latter): ", min, max, maxBrightCh[channel]);
-		Dialog.addNumber("Remove background - sigma: \nTo disable it, enter 0", rmBgCh[channel]);
-	}
-	Dialog.show();
+		whiteblack = newArray("White","Black");
+
+		Dialog.create("Setting");
+		Dialog.addMessage("---------------------------");
+		Dialog.addMessage("Scale bar setting");
+		Dialog.addMessage("---------------------------");
+		Dialog.addNumber("Length of the scale bar for the main image: ", scLength);
+		Dialog.addNumber("Length of the scale bar for the inset: ", iscLength);
+		Dialog.addNumber("thickness (in px): ", scThickness);
+		Dialog.addNumber("font (in px): ", scFond);
+		Dialog.addChoice("color", whiteblack, scColor);
+		Dialog.addToSameRow();
+		Dialog.addCheckbox("Adjust the color for each image? ", true);
+
+		Dialog.addMessage("");
+		Dialog.addMessage("---------------------------");
+		Dialog.addMessage("Save Setting");
+		Dialog.addMessage("---------------------------");
+		Dialog.addChoice("Choose dimension", newArray("Height","Width"), dim);
+		Dialog.addNumber("Image height in mm", size);
+		Dialog.addNumber("DPI for image import", dpi);
+		Dialog.addChoice("Format of the image", newArray("SVG","TIFF"), format);
+		Dialog.addMessage("");
+		Dialog.addMessage("Note regarding image saving:");
+		Dialog.addMessage("Initially, Inkscape uses a resolution of 96 dpi,\nwhile Illustrator uses a resolution of 72 dpi\nwhen importing images.");
+		Dialog.addMessage("In Inkscape, you can adjust the import resolution to ensure that the specified size is respected\n(Edit > Preferences > Import/Export > Import Resolution)\nIt does not work with Illustrator");
+		Dialog.addMessage("Moreover, the specified size will only be preserved if the image is saved as\na TIFF (in which case, the scale bars and inset rectangles cannot be\nmodified). If you want to be able to modify the scale bars and inset\nrectangles, you must select SVG as the save format.");
+		Dialog.show();
+
+		scLength = Dialog.getNumber();
+		iscLength = Dialog.getNumber();
+		scThickness = Dialog.getNumber();
+		scFond = Dialog.getNumber();
+		scColor = Dialog.getChoice();
+		scAskColor = Dialog.getCheckbox();
+		dim=Dialog.getChoice();
+		size = Dialog.getNumber();
+		dpi = Dialog.getNumber();
+		format = Dialog.getChoice();
+		
+		// Define RGBcolor here that will be used for create inset
+		if (scColor=="Black") {
+			scRGBColor = "000, 000, 000";
+		} else {
+			scRGBColor = "255, 255, 255";
+		}
+		//
 	
-	adjChannelForEachImg = Dialog.getCheckbox();
-	for (channel = 0; channel < channels; channel++) {
-		colorCh[channel] = Dialog.getChoice();
-		minBrightCh[channel] = Dialog.getNumber();
-		maxBrightCh[channel] = Dialog.getNumber();
-		rmBgCh[channel] = Dialog.getNumber();
+		if (typeImage != "RGB" && adjBrightness) {
+			getDimensions(width, height, channels, slices, frames);
+			getMinAndMax(min, max);
+			
+			if (!preexistingSetting) {
+				colorCh = newArray(channels);
+				minBrightCh = newArray(channels);
+				maxBrightCh = newArray(channels);
+				rmBgCh = newArray(channels);
+				for (channel = 0; channel < channels; channel++) {
+					colorCh[channel] = "Grays";
+					minBrightCh[channel] = min;
+					maxBrightCh[channel] = max;
+					rmBgCh[channel] = 0;
+				}
+			
+			}
+			Dialog.createNonBlocking("Setting for gray scale image: color and brightness");
+			Dialog.addMessage("---------------------------");
+			Dialog.addMessage("Seeting channel brightness and color");
+			Dialog.addMessage("---------------------------");
+			Dialog.addCheckbox("Adjust the color and brightness for each image? ", true);
+			for (channel = 0; channel < channels; channel++) {
+				Dialog.addMessage("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+				Dialog.addMessage("Channel " + channel+1);
+				Dialog.addChoice("Color: " , getList("LUTs"), colorCh[channel]);
+				Dialog.addSlider("Minimal Brightness (Can be adjusted latter): ", min, max, minBrightCh[channel]);
+				Dialog.addSlider("Maximal Brightness (Can be adjusted latter): ", min, max, maxBrightCh[channel]);
+				Dialog.addNumber("Remove background - sigma: \nTo disable it, enter 0", rmBgCh[channel]);
+			}
+			Dialog.show();
+			
+			adjChannelForEachImg = Dialog.getCheckbox();
+			for (channel = 0; channel < channels; channel++) {
+				colorCh[channel] = Dialog.getChoice();
+				minBrightCh[channel] = Dialog.getNumber();
+				maxBrightCh[channel] = Dialog.getNumber();
+				rmBgCh[channel] = Dialog.getNumber();
+			}
+		}
 	}
-}
-}
+
+	//Crop image	
+	if (crop) {
+		setTool(0);
+		roiManager("deselect");
+		if(roiManager("count")>0) roiManager("delete");
+		if(File.exists(inputDir+"crop.zip")) roiManager("open", inputDir+"crop.zip");
+		waitForUser("Select ROI for cropping.\nAdd it to the ROI Manager (Ctrl+T), if you want to save it.\nYou can also load 'crop' ROI from a previous processing step");
+		if (roiManager("count") > 0) {
+			roiManager("select", 0);
+			roiManager("rename", "crop");
+			roiManager("save", inputDir+"crop.zip");
+		}
+		if(checkROI){
+			while (roiManager("count") ==0) {
+				waitForUser("You forgot to add ROI to ROI manager... Enter Ctrl+T");
+			}
+		}
+		run("Crop");
+	}
 
 	if (rotate) {
 		Dialog.create("Rotate");
@@ -195,53 +217,40 @@ if (typeImage != "RGB" && adjBrightness) {
 		if (flip == "horizontally") run("Flip Horizontally");
 		if (flip == "vertically") run("Flip Vertically");
 	}
-
-
-	if (adjBrightness) {
-		if (typeImage == "RGB") {
-		run("Brightness/Contrast...");
-		waitForUser("Adjust the brightness...");
-	} else if (typeImage != "RGB") {
-		run("Split Channels");
-		mergingArray = newArray("*None*", "*None*", "*None*", "*None*", "*None*", "*None*", "*None*", "*None*");
-		for (channel = 0; channel < channels; channel++) {
-			selectImage("C"+channel+1+"-"+title);
-			mergingArray[channel] = getTitle(); 
-			if (rmBgCh[channel]>0) run("Subtract Background...","rolling="+rmBgCh[channel]);
-			run(colorCh[channel]);
-			setMinAndMax(minBrightCh[channel], maxBrightCh[channel]);
+	
+	// Adjust the brightness and color balance.
+	if (typeImage == "RGB") {
+		if (adjColorBalance) {
+			colorBalance();	
+		} else if (!adjColorBalance && adjBrightness) {
 			run("Brightness/Contrast...");
-			waitForUser("Adjust the brightness and color...");
-			getMinAndMax(minBrightCh[channel], maxBrightCh[channel]);
-			close("B&C");
+			waitForUser("Adjust the brightness...");
 		}
-	}
-	}
-	
-	mergeS = "c1=" +mergingArray[0]+ " c2=" +mergingArray[1]+ "  c3=" +mergingArray[2]+ "  c4=" +mergingArray[3]+ "  c5=" +mergingArray[4]+ "  c6=" +mergingArray[5]+ "  c7=" +mergingArray[6]+ "  c8=" +mergingArray[7];
-	run("Merge Channels...", mergeS+" create");
-	
-	if (crop) {
-		setTool(0);
-		roiManager("deselect");
-		if(roiManager("count")>0) roiManager("delete");
-		if(File.exists(inputDir+"crop.zip")) roiManager("open", inputDir+"crop.zip");
-		waitForUser("Select ROI for cropping.\nAdd it to the ROI Manager (Ctrl+T), if you want to save it.\nYou can also load 'crop' ROI from a previous processing step");
-		if (roiManager("count") > 0) roiManager("save", inputDir+"crop.zip");
-		if(checkROI){
-			while (roiManager("count") ==0) {
-				waitForUser("You forgot to add ROI to ROI manager... Enter Ctrl+T");
+	} else {
+		if (adjBrightness) {
+			run("Split Channels");
+			mergingArray = newArray("*None*", "*None*", "*None*", "*None*", "*None*", "*None*", "*None*", "*None*");
+			for (channel = 0; channel < channels; channel++) {
+				selectImage("C"+channel+1+"-"+title);
+				mergingArray[channel] = getTitle(); 
+				if (rmBgCh[channel]>0) run("Subtract Background...","rolling="+rmBgCh[channel]);
+				run(colorCh[channel]);
+				setMinAndMax(minBrightCh[channel], maxBrightCh[channel]);
+				run("Brightness/Contrast...");
+				waitForUser("Adjust the brightness and color...");
+				getMinAndMax(minBrightCh[channel], maxBrightCh[channel]);
+				close("B&C");
 			}
+		mergeS = "c1=" +mergingArray[0]+ " c2=" +mergingArray[1]+ "  c3=" +mergingArray[2]+ "  c4=" +mergingArray[3]+ "  c5=" +mergingArray[4]+ "  c6=" +mergingArray[5]+ "  c7=" +mergingArray[6]+ "  c8=" +mergingArray[7];
+		run("Merge Channels...", mergeS+" create");
 		}
-		run("Crop");
 	}
-		setBatchMode("hide");
 	
-		setTool(0);
-		roiManager("deselect");
-		if(roiManager("count")>0) roiManager("delete");
-		if(File.exists(inputDir+"inset.zip")) roiManager("open", inputDir+"inset.zip");
-		setBatchMode("exit and display");
+	setTool(0);
+	roiManager("deselect");
+	if(roiManager("count")>0) roiManager("delete");
+	if(File.exists(inputDir+"inset.zip")) roiManager("open", inputDir+"inset.zip");
+	setBatchMode("exit and display");
 		
 	for (inset = 0; inset < insetNbr; inset++) {
 		selectImage(title);
@@ -260,6 +269,8 @@ if (typeImage != "RGB" && adjBrightness) {
 		Dialog.addMessage("WARNING: Unclick 'Add scale Bar'");
 		Dialog.show();
 		roiManager("add");
+		roiManager("select", inset);
+		roiManager("rename", "inset-"+inset);
 		eval("script", "importClass(Packages.inset.creator.InsetProcessor); InsetProcessor.createInset();");
 		checkInserDone();
 		rename("Inset-" +inset+1+ "-"+title);
@@ -395,3 +406,58 @@ function correctGetTitle() {
 	return title;
 }
 
+function colorBalance() {
+	print("Run color balance...");
+	close("temp");
+	roiManager("reset");
+
+	title = getTitle();
+	getDimensions(width, height, channels, slices, frames);
+
+	RGBArray = newArray("Red","Green","Blue");
+	RGBIndexSetMinMax = newArray(4, 2, 1);
+
+	run("Set Measurements...", "mean redirect=None decimal=0");
+	makeRectangle(1, 1, width*0.1, height*0.1);
+	waitForUser("Moove the square to a place that should be completely white");
+
+	setBatchMode("hide");
+	run("Duplicate...", "title=temp duplicate");
+
+	// Get color of each RGB channel
+	selectImage("temp");
+	run("RGB Stack");
+	RGB_bg = newArray(3);
+	
+	for (i = 0; i < 3; i++) {
+		selectImage("temp");
+		setSlice(i+1);
+		run("Select All");
+		getStatistics(area, mean, min, max, std, histogram);
+		RGB_bg[i] = mean;
+	}
+
+	minI = Array.findMinima(RGB_bg, 5);
+
+	selectImage(title);
+	run("Select None");
+	
+	if (minI.length>0) {
+		print("Balance color to get white/light background");
+		print("Color balance will be adjust on " + RGBArray[minI[0]]);
+		min = RGB_bg[minI[0]];
+		
+		for (i = 0; i < 3; i++) {
+			val = RGB_bg[i];
+			delta = val-min;
+			setMinAndMax(delta, 255+delta, RGBIndexSetMinMax[i]);
+			print(RGBArray[i]);
+			print("min: " + delta);
+			print("max: " + 255+delta);
+		}
+	}
+
+	setBatchMode("exit and display");
+	selectImage(title);
+	run("Brightness/Contrast...");
+}
